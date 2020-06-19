@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ReaSync
 {
@@ -31,12 +32,21 @@ namespace ReaSync
 		private string _localPath;
 		private string _remotePath;
 		private Configuration _config;
+		private ActionTraceListener _traceListener;
 
 		public MainForm()
 		{
 			InitializeComponent();
 
+			_traceListener = new ActionTraceListener(Log);
+			Trace.Listeners.Add(_traceListener);
+
 			_config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+		}
+
+		private void InternalDispose()
+		{
+			Trace.Listeners.Remove(_traceListener);
 		}
 
 		protected override void OnLoad(EventArgs e)
@@ -80,6 +90,7 @@ namespace ReaSync
 			GetSetting(USERNAME_KEY).Value = UserName;
 			_config.Save(ConfigurationSaveMode.Modified);
 		}
+
 		private string Browse(string currentFolder)
 		{ 
 			using (FolderBrowserDialog dialog = new FolderBrowserDialog())
@@ -117,9 +128,27 @@ namespace ReaSync
 				SetStatus("Remote path does not exist");
 		}
 
-		private void SetStatus(string message) => labelStatus.Text = message;
+		private void SetStatus(string message)
+		{
+			labelStatus.Text = message;
+			Trace.WriteLine($"Status: {message}");
+		}
+
 		private void ShowError(string message) => MessageBox.Show(message, APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 		private bool Query(string message) => MessageBox.Show(message, APP_NAME, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+		private void Log(string message, bool append)
+		{
+			if (append && listBoxLog.Items.Count > 0)
+			{
+				string currentMessage = (string)listBoxLog.Items[listBoxLog.Items.Count - 1];
+				listBoxLog.Items[listBoxLog.Items.Count - 1] = $"{currentMessage}{message}";
+			}
+			else
+			{
+				listBoxLog.Items.Add(message);
+				listBoxLog.SelectedIndex = listBoxLog.Items.Count - 1;
+			}
+		}
 
 		private void buttonRefresh_Click(object sender, EventArgs e)
 		{
@@ -146,7 +175,9 @@ namespace ReaSync
 		}
 
 		private void GetLatestVersion()
-		{ 
+		{
+			Trace.WriteLine("Getting latest version");
+
 			Directory.Delete(LocalPath, true);
 			Directory.CreateDirectory(LocalPath);
 
