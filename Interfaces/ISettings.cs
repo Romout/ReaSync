@@ -8,6 +8,8 @@ namespace ReaSync.Interfaces
 {
 	public interface ISettings
 	{
+		void Save();
+
 		string GetSetting(string name);
 		void SetSetting(string name, string value);
 	}

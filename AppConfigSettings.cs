@@ -33,5 +33,10 @@ namespace ReaSync
 		{
 			GetConfigurationElement(name).Value = value;
 		}
+
+		public void Save()
+		{
+			_config.Save(ConfigurationSaveMode.Modified);
+		}
 	}
 }
