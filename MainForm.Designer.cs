@@ -29,6 +29,7 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.textBoxLocal = new System.Windows.Forms.TextBox();
 			this.buttonBrowseLocal = new System.Windows.Forms.Button();
 			this.label1 = new System.Windows.Forms.Label();
@@ -40,33 +41,36 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.textBoxUserName = new System.Windows.Forms.TextBox();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.listBoxLog = new System.Windows.Forms.ListBox();
+			this.label5 = new System.Windows.Forms.Label();
 			this.buttonGetLatest = new System.Windows.Forms.Button();
 			this.buttonCheckin = new System.Windows.Forms.Button();
 			this.buttonRefresh = new System.Windows.Forms.Button();
 			this.buttonCheckout = new System.Windows.Forms.Button();
 			this.labelStatus = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.label5 = new System.Windows.Forms.Label();
-			this.listBoxLog = new System.Windows.Forms.ListBox();
+			this.dataModelBindingSource = new System.Windows.Forms.BindingSource(this.components);
 			this.tabControl1.SuspendLayout();
 			this.tabPage1.SuspendLayout();
 			this.tabPage2.SuspendLayout();
+			((System.ComponentModel.ISupportInitialize)(this.dataModelBindingSource)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// textBoxLocal
 			// 
 			this.textBoxLocal.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxLocal.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.dataModelBindingSource, "LocalPath", true));
 			this.textBoxLocal.Location = new System.Drawing.Point(22, 44);
 			this.textBoxLocal.Name = "textBoxLocal";
 			this.textBoxLocal.ReadOnly = true;
-			this.textBoxLocal.Size = new System.Drawing.Size(358, 20);
+			this.textBoxLocal.Size = new System.Drawing.Size(232, 20);
 			this.textBoxLocal.TabIndex = 0;
 			// 
 			// buttonBrowseLocal
 			// 
 			this.buttonBrowseLocal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonBrowseLocal.Location = new System.Drawing.Point(386, 42);
+			this.buttonBrowseLocal.Location = new System.Drawing.Point(260, 42);
 			this.buttonBrowseLocal.Name = "buttonBrowseLocal";
 			this.buttonBrowseLocal.Size = new System.Drawing.Size(75, 23);
 			this.buttonBrowseLocal.TabIndex = 1;
@@ -95,7 +99,7 @@
 			// buttonBrowseRemote
 			// 
 			this.buttonBrowseRemote.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-			this.buttonBrowseRemote.Location = new System.Drawing.Point(386, 97);
+			this.buttonBrowseRemote.Location = new System.Drawing.Point(260, 97);
 			this.buttonBrowseRemote.Name = "buttonBrowseRemote";
 			this.buttonBrowseRemote.Size = new System.Drawing.Size(75, 23);
 			this.buttonBrowseRemote.TabIndex = 4;
@@ -107,10 +111,11 @@
 			// 
 			this.textBoxRemote.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxRemote.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.dataModelBindingSource, "RemotePath", true));
 			this.textBoxRemote.Location = new System.Drawing.Point(22, 99);
 			this.textBoxRemote.Name = "textBoxRemote";
 			this.textBoxRemote.ReadOnly = true;
-			this.textBoxRemote.Size = new System.Drawing.Size(358, 20);
+			this.textBoxRemote.Size = new System.Drawing.Size(232, 20);
 			this.textBoxRemote.TabIndex = 3;
 			// 
 			// tabControl1
@@ -137,7 +142,7 @@
 			this.tabPage1.Location = new System.Drawing.Point(4, 22);
 			this.tabPage1.Name = "tabPage1";
 			this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage1.Size = new System.Drawing.Size(484, 240);
+			this.tabPage1.Size = new System.Drawing.Size(356, 215);
 			this.tabPage1.TabIndex = 0;
 			this.tabPage1.Text = "Configuration";
 			this.tabPage1.UseVisualStyleBackColor = true;
@@ -155,9 +160,10 @@
 			// 
 			this.textBoxUserName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+			this.textBoxUserName.DataBindings.Add(new System.Windows.Forms.Binding("Text", this.dataModelBindingSource, "UserName", true));
 			this.textBoxUserName.Location = new System.Drawing.Point(22, 154);
 			this.textBoxUserName.Name = "textBoxUserName";
-			this.textBoxUserName.Size = new System.Drawing.Size(358, 20);
+			this.textBoxUserName.Size = new System.Drawing.Size(313, 20);
 			this.textBoxUserName.TabIndex = 3;
 			this.textBoxUserName.TextChanged += new System.EventHandler(this.textBoxUserName_TextChanged);
 			// 
@@ -178,6 +184,27 @@
 			this.tabPage2.TabIndex = 1;
 			this.tabPage2.Text = "Synchronization";
 			this.tabPage2.UseVisualStyleBackColor = true;
+			// 
+			// listBoxLog
+			// 
+			this.listBoxLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.listBoxLog.FormattingEnabled = true;
+			this.listBoxLog.IntegralHeight = false;
+			this.listBoxLog.Location = new System.Drawing.Point(17, 130);
+			this.listBoxLog.Name = "listBoxLog";
+			this.listBoxLog.Size = new System.Drawing.Size(321, 69);
+			this.listBoxLog.TabIndex = 5;
+			// 
+			// label5
+			// 
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(21, 113);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(28, 13);
+			this.label5.TabIndex = 4;
+			this.label5.Text = "Log:";
 			// 
 			// buttonGetLatest
 			// 
@@ -237,31 +264,13 @@
 			this.label3.TabIndex = 0;
 			this.label3.Text = "Status:";
 			// 
-			// label5
+			// dataModelBindingSource
 			// 
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(21, 113);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(28, 13);
-			this.label5.TabIndex = 4;
-			this.label5.Text = "Log:";
-			// 
-			// listBoxLog
-			// 
-			this.listBoxLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-			this.listBoxLog.FormattingEnabled = true;
-			this.listBoxLog.IntegralHeight = false;
-			this.listBoxLog.Location = new System.Drawing.Point(17, 130);
-			this.listBoxLog.Name = "listBoxLog";
-			this.listBoxLog.Size = new System.Drawing.Size(321, 69);
-			this.listBoxLog.TabIndex = 5;
+			this.dataModelBindingSource.DataSource = typeof(ReaSync.DataModel);
 			// 
 			// MainForm
 			// 
-			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
 			this.ClientSize = new System.Drawing.Size(364, 241);
 			this.Controls.Add(this.tabControl1);
 			this.MinimumSize = new System.Drawing.Size(380, 280);
@@ -272,6 +281,7 @@
 			this.tabPage1.PerformLayout();
 			this.tabPage2.ResumeLayout(false);
 			this.tabPage2.PerformLayout();
+			((System.ComponentModel.ISupportInitialize)(this.dataModelBindingSource)).EndInit();
 			this.ResumeLayout(false);
 
 		}
@@ -297,6 +307,7 @@
 		private System.Windows.Forms.Button buttonGetLatest;
 		private System.Windows.Forms.ListBox listBoxLog;
 		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.BindingSource dataModelBindingSource;
 	}
 }
 

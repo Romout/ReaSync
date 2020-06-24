@@ -13,25 +13,10 @@ namespace ReaSync
 {
 	public partial class MainForm : Form
 	{
-		private enum StatusEnum
-		{
-			Unknown,
-			Okay,
-			Locked,
-			CheckedOut,
-			Error,
-		}
-
 		private const string APP_NAME = "ReaSync";
 		private const string LOCK_FILE = ".lock";
 		private const string HASH_FILE = ".hashes";
-		private const string LOCAL_KEY = "local";
-		private const string REMOTE_KEY = "remote";
-		private const string USERNAME_KEY = "username";
 
-		private string _localPath;
-		private string _remotePath;
-		private Configuration _config;
 		private ActionTraceListener _traceListener;
 
 		public MainForm()
@@ -40,8 +25,6 @@ namespace ReaSync
 
 			_traceListener = new ActionTraceListener(Log);
 			Trace.Listeners.Add(_traceListener);
-
-			_config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
 		}
 
 		private DataModel Model => Controller.Model;
@@ -49,40 +32,39 @@ namespace ReaSync
 		private void InternalDispose()
 		{
 			Trace.Listeners.Remove(_traceListener);
+
+			Model.StatusMessageChanged -= Model_StatusMessageChanged;
 		}
 
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
 
-			textBoxLocal.Text = Model.LocalPath;
-			textBoxRemote.Text = Model.RemotePath;
+			dataModelBindingSource.DataSource = Model;
+
 			if (string.IsNullOrEmpty(Model.UserName))
 				Model.UserName = Environment.UserName;
 
-			using (new Once())
-				textBoxUserName.Text = Model.UserName;
+			Model.StatusMessageChanged += Model_StatusMessageChanged;
+			Controller.UpdateStatus();
+		}
 
-			UpdateStatus();
+		private void Model_StatusMessageChanged(object sender, string message)
+		{
+			labelStatus.Text = message;
+			Trace.WriteLine($"Status: {message}");
 		}
 
 		private void buttonBrowseLocal_Click(object sender, EventArgs e)
 		{
-			Model.LocalPath = Browse(textBoxLocal.Text);
+			Model.LocalPath = Browse(Model.LocalPath);
 			Controller.SaveSettings();
 		}
 
 		private void buttonBrowseRemote_Click(object sender, EventArgs e)
 		{
-			Model.RemotePath = Browse(textBoxRemote.Text);
+			Model.RemotePath = Browse(Model.RemotePath);
 			Controller.SaveSettings();
-		}
-
-		private KeyValueConfigurationElement GetSetting(string name)
-		{
-			if (!_config.AppSettings.Settings.AllKeys.Contains(name))
-				_config.AppSettings.Settings.Add(name, "");
-			return _config.AppSettings.Settings[name];
 		}
 
 		private string Browse(string currentFolder)
@@ -94,38 +76,6 @@ namespace ReaSync
 					return dialog.SelectedPath;
 			}
 			return null;
-		}
-
-		private void UpdateStatus()
-		{
-			Status = StatusEnum.Error;
-			if (Directory.Exists(Model.RemotePath))
-			{
-				SetStatus("okay");
-				Status = StatusEnum.Okay;
-				if (File.Exists(RemoteLockFile))
-				{
-					string name = File.ReadAllText(RemoteLockFile);
-					if (name == Model.UserName)
-					{
-						SetStatus($"You have checked out the files");
-						Status = StatusEnum.CheckedOut;
-					}
-					else
-					{
-						SetStatus($"Checked out by {name}");
-						Status = StatusEnum.Locked;
-					}
-				}
-			}
-			else
-				SetStatus("Remote path does not exist");
-		}
-
-		private void SetStatus(string message)
-		{
-			labelStatus.Text = message;
-			Trace.WriteLine($"Status: {message}");
 		}
 
 		private void ShowError(string message) => MessageBox.Show(message, APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -146,117 +96,27 @@ namespace ReaSync
 
 		private void buttonRefresh_Click(object sender, EventArgs e)
 		{
-			UpdateStatus();
+			Controller.UpdateStatus();
 		}
 
 		private void buttonGetLatest_Click(object sender, EventArgs e)
 		{
 			if (Query("Are you sure you want to overwrite your local files with the state of the remote path?"))
-				GetLatestVersion();
+				Controller.GetLatestVersion();
 		}
 
 		private void buttonCheckout_Click(object sender, EventArgs e)
 		{
-			UpdateStatus();
-			if (Status == StatusEnum.Locked)
+			ResultEnum result = Controller.Checkout(() => Query("You've already got the files checked out. Are you sure you want to overwrite your local files with the state of the remote path?"));
+			if (result == ResultEnum.CheckedOutBySomeoneElse)
 				ShowError("Files are currently locked by someone else");
-			else if (Status == StatusEnum.Okay ||
-					(Status == StatusEnum.CheckedOut && Query("You've already got the files checked out. Are you sure you want to overwrite your local files with the state of the remote path?")))
-			{
-				File.WriteAllText(RemoteLockFile, Model.UserName);
-				GetLatestVersion();
-			}
-		}
-
-		private void GetLatestVersion()
-		{
-			Trace.WriteLine("Getting latest version");
-
-			Directory.Delete(Model.LocalPath, true);
-			Directory.CreateDirectory(Model.LocalPath);
-
-			// That's odd but seems to can happen
-			while (!Directory.Exists(Model.LocalPath))
-				Thread.Sleep(100);
-
-			Copy(Model.RemotePath, Model.LocalPath);
 		}
 
 		private void buttonCheckin_Click(object sender, EventArgs e)
 		{
-			UpdateStatus();
-
-			if (Directory.Exists(Model.LocalPath) && Directory.Exists(Model.RemotePath))
-			{
-				if (Status != StatusEnum.CheckedOut)
-					ShowError("The files are currently not checked out by you");
-				else
-				{
-					Dictionary<string, string> remoteHashes = new Dictionary<string, string>();
-					Dictionary<string, string> localHashes = new Dictionary<string, string>();
-					if (File.Exists(RemoteHashFile))
-					{
-						remoteHashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(RemoteHashFile));
-					}
-					foreach (string fileName in Directory.GetFiles(Model.LocalPath, "*", SearchOption.AllDirectories))
-					{
-						// Ignore hidden files
-						if (Path.GetFileName(fileName).StartsWith("."))
-							continue;
-
-						string relativeFileName = PathExtended.GetRelativePath(Model.LocalPath, fileName);
-						string localHash = FileChecksum(fileName);
-						localHashes.Add(relativeFileName, localHash);
-
-						if (!remoteHashes.TryGetValue(relativeFileName, out string remoteHash) || remoteHash != localHash)
-						{
-							string targetFile = Path.Combine(Model.RemotePath, relativeFileName);
-							string targetPath = Path.GetDirectoryName(targetFile);
-							if (!Directory.Exists(targetPath))
-								Directory.CreateDirectory(targetPath);
-							File.Copy(fileName, targetFile, true);
-						}
-					}
-					File.WriteAllText(RemoteHashFile, JsonConvert.SerializeObject(localHashes, Formatting.Indented));
-					File.Delete(RemoteLockFile);
-
-					UpdateStatus();
-				}
-			}
+			if (Controller.Checkin() == ResultEnum.NotCheckedOutByCaller)
+				ShowError("The files are currently not checked out by you");
 		}
-
-		private string FileChecksum(string fileName)
-		{
-			using (var stream = new BufferedStream(File.OpenRead(fileName), 1200000))
-			{
-				MD5Cng md5 = new MD5Cng();
-				byte[] checksum = md5.ComputeHash(stream);
-				return BitConverter.ToString(checksum).Replace("-", string.Empty);
-			}
-		}
-
-		private void Copy(string source, string destination)
-		{
-			if (!Directory.Exists(destination))
-				Directory.CreateDirectory(destination);
-
-			foreach(string fileName in Directory.GetFiles(source))
-			{
-				if (Path.GetFileName(fileName).StartsWith("."))
-					continue;
-
-				File.Copy(fileName, Path.Combine(destination, Path.GetFileName(fileName)), true);
-			}
-
-			foreach (string directory in Directory.GetDirectories(source))
-			{
-				Copy(directory, Path.Combine(destination, Path.GetFileName(directory)));
-			}
-		}
-
-		private string RemoteLockFile => Path.Combine(Model.RemotePath, LOCK_FILE);
-		private string RemoteHashFile => Path.Combine(Model.RemotePath, HASH_FILE);
-		private StatusEnum Status { get; set; }
 
 		private void textBoxUserName_TextChanged(object sender, EventArgs e)
 		{
