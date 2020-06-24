@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ReaSync
 {
@@ -31,40 +32,50 @@ namespace ReaSync
 		private string _localPath;
 		private string _remotePath;
 		private Configuration _config;
+		private ActionTraceListener _traceListener;
 
 		public MainForm()
 		{
 			InitializeComponent();
 
+			_traceListener = new ActionTraceListener(Log);
+			Trace.Listeners.Add(_traceListener);
+
 			_config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+		}
+
+		private DataModel Model => Controller.Model;
+
+		private void InternalDispose()
+		{
+			Trace.Listeners.Remove(_traceListener);
 		}
 
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
 
-			LocalPath = GetSetting(LOCAL_KEY).Value;
-			RemotePath = GetSetting(REMOTE_KEY).Value;
-			UserName = GetSetting(USERNAME_KEY).Value;
-			if (string.IsNullOrEmpty(UserName))
-				UserName = Environment.UserName;
+			textBoxLocal.Text = Model.LocalPath;
+			textBoxRemote.Text = Model.RemotePath;
+			if (string.IsNullOrEmpty(Model.UserName))
+				Model.UserName = Environment.UserName;
 
 			using (new Once())
-				textBoxUserName.Text = UserName;
+				textBoxUserName.Text = Model.UserName;
 
 			UpdateStatus();
 		}
 
 		private void buttonBrowseLocal_Click(object sender, EventArgs e)
 		{
-			LocalPath = Browse(textBoxLocal.Text);
-			SaveSettings();
+			Model.LocalPath = Browse(textBoxLocal.Text);
+			Controller.SaveSettings();
 		}
 
 		private void buttonBrowseRemote_Click(object sender, EventArgs e)
 		{
-			RemotePath = Browse(textBoxRemote.Text);
-			SaveSettings();
+			Model.RemotePath = Browse(textBoxRemote.Text);
+			Controller.SaveSettings();
 		}
 
 		private KeyValueConfigurationElement GetSetting(string name)
@@ -73,13 +84,7 @@ namespace ReaSync
 				_config.AppSettings.Settings.Add(name, "");
 			return _config.AppSettings.Settings[name];
 		}
-		private void SaveSettings()
-		{
-			GetSetting(LOCAL_KEY).Value = LocalPath;
-			GetSetting(REMOTE_KEY).Value = RemotePath;
-			GetSetting(USERNAME_KEY).Value = UserName;
-			_config.Save(ConfigurationSaveMode.Modified);
-		}
+
 		private string Browse(string currentFolder)
 		{ 
 			using (FolderBrowserDialog dialog = new FolderBrowserDialog())
@@ -94,14 +99,14 @@ namespace ReaSync
 		private void UpdateStatus()
 		{
 			Status = StatusEnum.Error;
-			if (Directory.Exists(RemotePath))
+			if (Directory.Exists(Model.RemotePath))
 			{
 				SetStatus("okay");
 				Status = StatusEnum.Okay;
 				if (File.Exists(RemoteLockFile))
 				{
 					string name = File.ReadAllText(RemoteLockFile);
-					if (name == UserName)
+					if (name == Model.UserName)
 					{
 						SetStatus($"You have checked out the files");
 						Status = StatusEnum.CheckedOut;
@@ -117,9 +122,27 @@ namespace ReaSync
 				SetStatus("Remote path does not exist");
 		}
 
-		private void SetStatus(string message) => labelStatus.Text = message;
+		private void SetStatus(string message)
+		{
+			labelStatus.Text = message;
+			Trace.WriteLine($"Status: {message}");
+		}
+
 		private void ShowError(string message) => MessageBox.Show(message, APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
 		private bool Query(string message) => MessageBox.Show(message, APP_NAME, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+		private void Log(string message, bool append)
+		{
+			if (append && listBoxLog.Items.Count > 0)
+			{
+				string currentMessage = (string)listBoxLog.Items[listBoxLog.Items.Count - 1];
+				listBoxLog.Items[listBoxLog.Items.Count - 1] = $"{currentMessage}{message}";
+			}
+			else
+			{
+				listBoxLog.Items.Add(message);
+				listBoxLog.SelectedIndex = listBoxLog.Items.Count - 1;
+			}
+		}
 
 		private void buttonRefresh_Click(object sender, EventArgs e)
 		{
@@ -140,28 +163,30 @@ namespace ReaSync
 			else if (Status == StatusEnum.Okay ||
 					(Status == StatusEnum.CheckedOut && Query("You've already got the files checked out. Are you sure you want to overwrite your local files with the state of the remote path?")))
 			{
-				File.WriteAllText(RemoteLockFile, UserName);
+				File.WriteAllText(RemoteLockFile, Model.UserName);
 				GetLatestVersion();
 			}
 		}
 
 		private void GetLatestVersion()
-		{ 
-			Directory.Delete(LocalPath, true);
-			Directory.CreateDirectory(LocalPath);
+		{
+			Trace.WriteLine("Getting latest version");
+
+			Directory.Delete(Model.LocalPath, true);
+			Directory.CreateDirectory(Model.LocalPath);
 
 			// That's odd but seems to can happen
-			while (!Directory.Exists(LocalPath))
+			while (!Directory.Exists(Model.LocalPath))
 				Thread.Sleep(100);
 
-			Copy(RemotePath, LocalPath);
+			Copy(Model.RemotePath, Model.LocalPath);
 		}
 
 		private void buttonCheckin_Click(object sender, EventArgs e)
 		{
 			UpdateStatus();
 
-			if (Directory.Exists(LocalPath) && Directory.Exists(RemotePath))
+			if (Directory.Exists(Model.LocalPath) && Directory.Exists(Model.RemotePath))
 			{
 				if (Status != StatusEnum.CheckedOut)
 					ShowError("The files are currently not checked out by you");
@@ -173,19 +198,19 @@ namespace ReaSync
 					{
 						remoteHashes = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(RemoteHashFile));
 					}
-					foreach (string fileName in Directory.GetFiles(LocalPath, "*", SearchOption.AllDirectories))
+					foreach (string fileName in Directory.GetFiles(Model.LocalPath, "*", SearchOption.AllDirectories))
 					{
 						// Ignore hidden files
 						if (Path.GetFileName(fileName).StartsWith("."))
 							continue;
 
-						string relativeFileName = PathExtended.GetRelativePath(LocalPath, fileName);
+						string relativeFileName = PathExtended.GetRelativePath(Model.LocalPath, fileName);
 						string localHash = FileChecksum(fileName);
 						localHashes.Add(relativeFileName, localHash);
 
 						if (!remoteHashes.TryGetValue(relativeFileName, out string remoteHash) || remoteHash != localHash)
 						{
-							string targetFile = Path.Combine(RemotePath, relativeFileName);
+							string targetFile = Path.Combine(Model.RemotePath, relativeFileName);
 							string targetPath = Path.GetDirectoryName(targetFile);
 							if (!Directory.Exists(targetPath))
 								Directory.CreateDirectory(targetPath);
@@ -229,34 +254,8 @@ namespace ReaSync
 			}
 		}
 
-		private string RemoteLockFile => Path.Combine(_remotePath, LOCK_FILE);
-		private string RemoteHashFile => Path.Combine(_remotePath, HASH_FILE);
-		private string LocalPath
-		{
-			get => _localPath;
-			set
-			{
-				if (_localPath != value)
-				{
-					_localPath = value;
-					textBoxLocal.Text = _localPath;
-				}
-			}
-		}
-		private string RemotePath
-		{
-			get => _remotePath;
-			set
-			{
-				if (_remotePath != value)
-				{
-					_remotePath = value;
-					textBoxRemote.Text = _remotePath;
-				}
-			}
-		}
-
-		public string UserName { get; private set; }
+		private string RemoteLockFile => Path.Combine(Model.RemotePath, LOCK_FILE);
+		private string RemoteHashFile => Path.Combine(Model.RemotePath, HASH_FILE);
 		private StatusEnum Status { get; set; }
 
 		private void textBoxUserName_TextChanged(object sender, EventArgs e)
@@ -264,9 +263,10 @@ namespace ReaSync
 			if (Once.IsActive)
 				return;
 
-			UserName = textBoxUserName.Text;
-			SaveSettings();
+			Model.UserName = textBoxUserName.Text;
+			Controller.SaveSettings();
 		}
 
+		public Controller Controller { get; set; }
 	}
 }

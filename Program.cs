@@ -16,7 +16,12 @@ namespace ReaSync
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-			Application.Run(new MainForm());
+			Application.Run(
+				new MainForm() 
+				{ Controller = new Controller(
+					new DataModel(), 
+					new AppConfigSettings()) 
+				});
 		}
 	}
 }

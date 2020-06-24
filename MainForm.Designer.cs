@@ -17,6 +17,7 @@
 			{
 				components.Dispose();
 			}
+			InternalDispose();
 			base.Dispose(disposing);
 		}
 
@@ -39,12 +40,14 @@
 			this.label4 = new System.Windows.Forms.Label();
 			this.textBoxUserName = new System.Windows.Forms.TextBox();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
+			this.buttonGetLatest = new System.Windows.Forms.Button();
 			this.buttonCheckin = new System.Windows.Forms.Button();
 			this.buttonRefresh = new System.Windows.Forms.Button();
 			this.buttonCheckout = new System.Windows.Forms.Button();
 			this.labelStatus = new System.Windows.Forms.Label();
 			this.label3 = new System.Windows.Forms.Label();
-			this.buttonGetLatest = new System.Windows.Forms.Button();
+			this.label5 = new System.Windows.Forms.Label();
+			this.listBoxLog = new System.Windows.Forms.ListBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1.SuspendLayout();
 			this.tabPage2.SuspendLayout();
@@ -118,7 +121,7 @@
 			this.tabControl1.Location = new System.Drawing.Point(0, 0);
 			this.tabControl1.Name = "tabControl1";
 			this.tabControl1.SelectedIndex = 0;
-			this.tabControl1.Size = new System.Drawing.Size(492, 266);
+			this.tabControl1.Size = new System.Drawing.Size(364, 241);
 			this.tabControl1.TabIndex = 6;
 			// 
 			// tabPage1
@@ -160,6 +163,8 @@
 			// 
 			// tabPage2
 			// 
+			this.tabPage2.Controls.Add(this.listBoxLog);
+			this.tabPage2.Controls.Add(this.label5);
 			this.tabPage2.Controls.Add(this.buttonGetLatest);
 			this.tabPage2.Controls.Add(this.buttonCheckin);
 			this.tabPage2.Controls.Add(this.buttonRefresh);
@@ -169,10 +174,20 @@
 			this.tabPage2.Location = new System.Drawing.Point(4, 22);
 			this.tabPage2.Name = "tabPage2";
 			this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-			this.tabPage2.Size = new System.Drawing.Size(484, 240);
+			this.tabPage2.Size = new System.Drawing.Size(356, 215);
 			this.tabPage2.TabIndex = 1;
 			this.tabPage2.Text = "Synchronization";
 			this.tabPage2.UseVisualStyleBackColor = true;
+			// 
+			// buttonGetLatest
+			// 
+			this.buttonGetLatest.Location = new System.Drawing.Point(98, 68);
+			this.buttonGetLatest.Name = "buttonGetLatest";
+			this.buttonGetLatest.Size = new System.Drawing.Size(75, 23);
+			this.buttonGetLatest.TabIndex = 3;
+			this.buttonGetLatest.Text = "Get Latest";
+			this.buttonGetLatest.UseVisualStyleBackColor = true;
+			this.buttonGetLatest.Click += new System.EventHandler(this.buttonGetLatest_Click);
 			// 
 			// buttonCheckin
 			// 
@@ -222,23 +237,34 @@
 			this.label3.TabIndex = 0;
 			this.label3.Text = "Status:";
 			// 
-			// buttonGetLatest
+			// label5
 			// 
-			this.buttonGetLatest.Location = new System.Drawing.Point(98, 68);
-			this.buttonGetLatest.Name = "buttonGetLatest";
-			this.buttonGetLatest.Size = new System.Drawing.Size(75, 23);
-			this.buttonGetLatest.TabIndex = 3;
-			this.buttonGetLatest.Text = "Get Latest";
-			this.buttonGetLatest.UseVisualStyleBackColor = true;
-			this.buttonGetLatest.Click += new System.EventHandler(this.buttonGetLatest_Click);
+			this.label5.AutoSize = true;
+			this.label5.Location = new System.Drawing.Point(21, 113);
+			this.label5.Name = "label5";
+			this.label5.Size = new System.Drawing.Size(28, 13);
+			this.label5.TabIndex = 4;
+			this.label5.Text = "Log:";
+			// 
+			// listBoxLog
+			// 
+			this.listBoxLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+			this.listBoxLog.FormattingEnabled = true;
+			this.listBoxLog.IntegralHeight = false;
+			this.listBoxLog.Location = new System.Drawing.Point(17, 130);
+			this.listBoxLog.Name = "listBoxLog";
+			this.listBoxLog.Size = new System.Drawing.Size(321, 69);
+			this.listBoxLog.TabIndex = 5;
 			// 
 			// MainForm
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(492, 266);
+			this.ClientSize = new System.Drawing.Size(364, 241);
 			this.Controls.Add(this.tabControl1);
-			this.MinimumSize = new System.Drawing.Size(300, 225);
+			this.MinimumSize = new System.Drawing.Size(380, 280);
 			this.Name = "MainForm";
 			this.Text = "ReaSync";
 			this.tabControl1.ResumeLayout(false);
@@ -269,6 +295,8 @@
 		private System.Windows.Forms.Label label4;
 		private System.Windows.Forms.TextBox textBoxUserName;
 		private System.Windows.Forms.Button buttonGetLatest;
+		private System.Windows.Forms.ListBox listBoxLog;
+		private System.Windows.Forms.Label label5;
 	}
 }
 
